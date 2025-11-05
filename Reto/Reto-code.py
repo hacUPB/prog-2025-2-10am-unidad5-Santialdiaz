@@ -1,4 +1,5 @@
-#Ayudas de la iA: try, para evitar bloqueos al presentarse un error, me pareció más funcional y directo
+#Ayudas IA: orden en el archivo, bsuqueda de errores, detectar las columnas numericas en los archivos csv, orden de las funciones,
+#complementos para el plt.
 import os
 import csv
 import matplotlib.pyplot as plt
@@ -6,7 +7,6 @@ import re
 
 
 ruta_base = "C:\\Users\\sadsd\\Programación-2025\\prog-2025-2-10am-unidad5-Santialdiaz\\Reto"
-
 
 
 def listar_archivos(ruta):
@@ -26,8 +26,8 @@ def listar_archivos(ruta):
             print("-", a)
     return archivos
 
-# FUNCIONES PARA ARCHIVOS .TXT
 
+# FUNCIONES PARA ARCHIVOS .TXT
 
 def contar_palabras_y_caracteres(ruta_archivo):
     if not os.path.exists(ruta_archivo):
@@ -43,6 +43,7 @@ def contar_palabras_y_caracteres(ruta_archivo):
     print("Número de palabras:", num_palabras)
     print("Caracteres (con espacios):", num_caracteres_con)
     print("Caracteres (sin espacios):", num_caracteres_sin)
+
 
 def reemplazar_palabra_txt(ruta_archivo):
     if not os.path.exists(ruta_archivo):
@@ -60,6 +61,7 @@ def reemplazar_palabra_txt(ruta_archivo):
         f.write(texto_nuevo)
     print("Reemplazo completado y guardado en el archivo.")
 
+
 def histograma_vocales_txt(ruta_archivo):
     if not os.path.exists(ruta_archivo):
         print("Archivo no encontrado.")
@@ -67,7 +69,9 @@ def histograma_vocales_txt(ruta_archivo):
     with open(ruta_archivo, "r", encoding="utf-8") as f:
         texto = f.read().lower()
     vocales = ["a", "e", "i", "o", "u"]
-    conteo = [texto.count(v) for v in vocales]
+    conteo = []
+    for v in vocales:
+        conteo.append(texto.count(v))
     print("\nOcurrencias de vocales:")
     for v, c in zip(vocales, conteo):
         print(f"{v}: {c}")
@@ -78,8 +82,12 @@ def histograma_vocales_txt(ruta_archivo):
     plt.tight_layout()
     plt.show()
 
+
 def submenu_txt():
-    archivos = [f for f in os.listdir(ruta_base) if f.lower().endswith(".txt")]
+    archivos = []
+    for f in os.listdir(ruta_base):
+        if f.lower().endswith(".txt"):
+            archivos.append(f)
     if len(archivos) == 0:
         print("No se encontraron archivos .txt en la carpeta.")
         return
@@ -118,16 +126,24 @@ def submenu_txt():
         else:
             print("Opción no válida.")
 
+
 # FUNCIONES PARA ARCHIVOS .CSV
 
 def leer_csv_sin_pandas(ruta_archivo):
+    lineas = []
     with open(ruta_archivo, "r", encoding="utf-8") as f:
-        lineas = [l.strip() for l in f if l.strip() != ""]
+        for l in f:
+            l = l.strip()
+            if l != "":
+                lineas.append(l)
     encabezado = lineas[0].split(",")
-    datos = [linea.split(",") for linea in lineas[1:]]
+    datos = []
+    for linea in lineas[1:]:
+        datos.append(linea.split(","))
     return encabezado, datos
 
-def convertir_a_float(valor):
+
+def convertir_a_float(valor): 
     """Intenta convertir cualquier formato numérico común (con , o .) a float."""
     if valor is None:
         return None
@@ -135,31 +151,39 @@ def convertir_a_float(valor):
     if valor == "" or valor.upper() in ("NA", "N/A", "-", "--"):
         return None
 
-   
-    valor = re.sub(r"[^\d,.\-]", "", valor)
+    valor = re.sub(r"[^\d,.\-]", "", valor)  #Consultado a iA
 
-    
     if "," in valor and "." in valor:
         if valor.find(",") > valor.find("."):
             valor = valor.replace(".", "").replace(",", ".")
         else:
             valor = valor.replace(",", "")
     elif "," in valor:
-
         valor = valor.replace(",", ".")
     try:
         return float(valor)
     except:
         return None
 
+
 def detectar_columnas_numericas(encabezado, datos):
     """Detecta columnas con valores numéricos válidos."""
     columnas_validas = []
-    for i, col in enumerate(encabezado):
-        valores_convertidos = [convertir_a_float(fila[i]) for fila in datos if i < len(fila)]
-        if any(v is not None for v in valores_convertidos):
+    for i in range(len(encabezado)):
+        col = encabezado[i]
+        valores_convertidos = []
+        for fila in datos:
+            if i < len(fila):
+                valores_convertidos.append(convertir_a_float(fila[i]))
+        encontrado = False
+        for v in valores_convertidos:
+            if v is not None:
+                encontrado = True
+                break
+        if encontrado:
             columnas_validas.append(col)
     return columnas_validas
+
 
 def extraer_valores_columna(encabezado, datos, nombre_columna):
     """Extrae valores numéricos válidos de una columna dada."""
@@ -174,13 +198,19 @@ def extraer_valores_columna(encabezado, datos, nombre_columna):
                 valores.append(v)
     return valores
 
+
 def mostrar_15_filas_csv(ruta_archivo):
     encabezado, datos = leer_csv_sin_pandas(ruta_archivo)
     print("\nEncabezado:")
     print(encabezado)
     print("\nPrimeras 15 filas:")
-    for i, fila in enumerate(datos[:15], start=1):
-        print(f"{i}: {fila}")
+    contador = 1
+    for fila in datos:
+        print(f"{contador}: {fila}")
+        contador += 1
+        if contador > 15:
+            break
+
 
 def calcular_estadisticas_columna(valores):
     if len(valores) == 0:
@@ -194,7 +224,10 @@ def calcular_estadisticas_columna(valores):
         mediana = orden[n // 2]
     else:
         mediana = (orden[n // 2 - 1] + orden[n // 2]) / 2
-    var = sum((x - promedio) ** 2 for x in valores) / n
+    var = 0
+    for x in valores:
+        var += (x - promedio) ** 2
+    var = var / n
     desviacion = var ** 0.5
     return {
         "cantidad": n,
@@ -204,6 +237,7 @@ def calcular_estadisticas_columna(valores):
         "minimo": minimo,
         "maximo": maximo
     }
+
 
 def graficar_valores(valores, titulo, tipo):
     if tipo == "linea":
@@ -223,8 +257,12 @@ def graficar_valores(valores, titulo, tipo):
     plt.tight_layout()
     plt.show()
 
+
 def submenu_csv():
-    archivos_csv = [f for f in os.listdir(ruta_base) if f.lower().endswith(".csv")]
+    archivos_csv = []
+    for f in os.listdir(ruta_base):
+        if f.lower().endswith(".csv"):
+            archivos_csv.append(f)
     if len(archivos_csv) == 0:
         print("No se encontraron archivos CSV en la carpeta.")
         return
@@ -297,8 +335,16 @@ def submenu_csv():
             print("\nTipos de gráfica:")
             print("1. Línea\n2. Barras\n3. Dispersión\n4. Histograma")
             t = input("Selecciona (1-4): ")
-            tipo = {"1": "linea", "2": "barras", "3": "dispersion", "4": "hist"}.get(t)
-            if not tipo:
+            tipo = None
+            if t == "1":
+                tipo = "linea"
+            elif t == "2":
+                tipo = "barras"
+            elif t == "3":
+                tipo = "dispersion"
+            elif t == "4":
+                tipo = "hist"
+            else:
                 print("Opción inválida.")
                 continue
             graficar_valores(valores, columna, tipo)
@@ -308,7 +354,6 @@ def submenu_csv():
         else:
             print("Opción no válida.")
 
-# MENÚ PRINCIPAL
 
 def menu_principal():
     while True:
@@ -333,4 +378,3 @@ def menu_principal():
 
 if __name__ == "__main__":
     menu_principal()
-
